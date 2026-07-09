@@ -1,5 +1,8 @@
+#define DEBUG
+
 const uint8_t PIN_ANALOG = A0;
 const uint8_t PIN_PWM    = 10;
+const float   V_PER_COUNT = 16.0 / 1024.0;
 
 // Lookup table: ADC value (0-1023) -> PWM output (0-255).
 // Generated from meter_lut.csv: a Gaussian-weighted nonlinear mapping
@@ -76,6 +79,9 @@ static uint16_t filtered = 0;
 void setup() {
   pinMode(PIN_PWM, OUTPUT);
   filtered = analogRead(PIN_ANALOG) << 3;
+#ifdef DEBUG
+  Serial.begin(9600);
+#endif
 }
 
 void loop() {
@@ -85,6 +91,22 @@ void loop() {
   uint16_t adc = filtered >> 3;
   if (adc > 1023) adc = 1023;
 
-  analogWrite(PIN_PWM, lut[adc]);
+  uint8_t pwm = lut[adc];
+  analogWrite(PIN_PWM, pwm);
+
+#ifdef DEBUG
+  static uint16_t loop_count = 0;
+  if (++loop_count >= 500) {
+    loop_count = 0;
+    float v_adc = adc * (5.0 / 1024.0);
+    float v_bus = adc * V_PER_COUNT;
+    float duty  = pwm / 255.0 * 100.0;
+    Serial.print("ADC: "); Serial.print(v_adc, 3); Serial.print(" V  |  ");
+    Serial.print("Bus: "); Serial.print(v_bus, 2); Serial.print(" V  |  ");
+    Serial.print("PWM: "); Serial.print(pwm); Serial.print("  |  ");
+    Serial.print("Duty: "); Serial.print(duty, 1); Serial.println("%");
+  }
+#endif
+
   delay(4);
 }
