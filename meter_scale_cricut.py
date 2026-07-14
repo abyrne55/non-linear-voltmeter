@@ -219,26 +219,38 @@ for hx in [MOUNT_HOLE_X, PLATE_W - MOUNT_HOLE_X]:
 # ── Ruler (optional) ────────────────────────────────────────────────
 if args.ruler:
     RULER_COLOR = '#888888'
+    GRID_COLOR = '#cccccc'
     RULER_TICK = 1.5
     RULER_LW = mm_to_pts(0.1)
+    GRID_LW = mm_to_pts(0.05)
     for x in range(int(PLATE_W) + 1):
-        tick = RULER_TICK * (2 if x % 10 == 0 else 1.4 if x % 5 == 0 else 1)
+        is_10 = x % 10 == 0
+        is_5 = x % 5 == 0
+        tick = RULER_TICK * (2 if is_10 else 1.4 if is_5 else 1)
+        grid_lw = GRID_LW * (2 if is_10 else 1.4 if is_5 else 1)
+        ax.plot([x, x], [0, PLATE_H],
+                color=GRID_COLOR, linewidth=grid_lw, zorder=0.5)
         ax.plot([x, x], [PLATE_H, PLATE_H - tick],
                 color=RULER_COLOR, linewidth=RULER_LW, zorder=5)
         ax.plot([x, x], [0, tick],
                 color=RULER_COLOR, linewidth=RULER_LW, zorder=5)
-        if x % 10 == 0:
+        if is_10:
             ax.text(x, PLATE_H - tick - 0.6, str(x), ha='center', va='top',
                     fontsize=3, color=RULER_COLOR, fontfamily='sans-serif', zorder=5)
             ax.text(x, tick + 0.6, str(x), ha='center', va='bottom',
                     fontsize=3, color=RULER_COLOR, fontfamily='sans-serif', zorder=5)
     for y in range(int(PLATE_H) + 1):
-        tick = RULER_TICK * (2 if y % 10 == 0 else 1.4 if y % 5 == 0 else 1)
+        is_10 = y % 10 == 0
+        is_5 = y % 5 == 0
+        tick = RULER_TICK * (2 if is_10 else 1.4 if is_5 else 1)
+        grid_lw = GRID_LW * (2 if is_10 else 1.4 if is_5 else 1)
+        ax.plot([0, PLATE_W], [y, y],
+                color=GRID_COLOR, linewidth=grid_lw, zorder=0.5)
         ax.plot([0, tick], [y, y],
                 color=RULER_COLOR, linewidth=RULER_LW, zorder=5)
         ax.plot([PLATE_W, PLATE_W - tick], [y, y],
                 color=RULER_COLOR, linewidth=RULER_LW, zorder=5)
-        if y % 10 == 0:
+        if is_10:
             ax.text(tick + 0.6, y, str(y), ha='left', va='center',
                     fontsize=3, color=RULER_COLOR, fontfamily='sans-serif', zorder=5)
             ax.text(PLATE_W - tick - 0.6, y, str(y), ha='right', va='center',
