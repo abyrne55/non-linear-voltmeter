@@ -157,9 +157,9 @@ for v in major_volts:
                 fontsize=5, fontfamily='sans-serif', color='#0b0b0b', zorder=4)
 
 # ── "Vdc" label ─────────────────────────────────────────────────────
-vdc_y = cy + ARC_RADIUS * 0.42
-ax.text(PIVOT_X, vdc_y, 'Vdc', ha='center', va='center',
-        fontsize=5.5, fontfamily='sans-serif', color='#52514e', zorder=4)
+ax.text(PLATE_W / 2, PLATE_H / 2, 'V', ha='center', va='center',
+        fontsize=16, fontweight='bold', fontfamily='sans-serif',
+        color='#0b0b0b', zorder=4)
 
 # ── Cut outline (magenta) ───────────────────────────────────────────
 CUT_COLOR = '#ff00ff'
