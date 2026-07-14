@@ -20,8 +20,8 @@ DEFLECTION    = 90.0               # degrees of needle sweep
 
 MOUNT_HOLE_DIA   = 2.0
 MOUNT_HOLE_INSET = 3.0             # from bottom-left / bottom-right corner
-NOTCH_W          = 14.0
-NOTCH_H          = 6.0
+NOTCH_W          = 22.0            # width of semicircular cutout
+NOTCH_H          = 6.0             # height of cutout (arc peak from bottom edge)
 
 # ── Voltage / sensitivity (same as meter_scale.py) ───────────────────
 BUS_MIN, BUS_MAX = 0.0, 16.0
@@ -158,11 +158,29 @@ ax.text(PIVOT_X, vdc_y, 'Vdc', ha='center', va='center',
 CUT_COLOR = '#ff00ff'
 CUT_LW = mm_to_pts(0.25)
 
-notch_left  = (PLATE_W - NOTCH_W) / 2
-notch_right = notch_left + NOTCH_W
+notch_cx = PLATE_W / 2
+notch_left = notch_cx - NOTCH_W / 2
+notch_right = notch_cx + NOTCH_W / 2
 
-outline_x = [0, 0, notch_left, notch_left, notch_right, notch_right, PLATE_W, PLATE_W, 0]
-outline_y = [PLATE_H, 0, 0, NOTCH_H, NOTCH_H, 0, 0, PLATE_H, PLATE_H]
+# Elliptical arc: half-width = NOTCH_W/2, height = NOTCH_H
+arc_th = np.linspace(np.pi, 0, 80)
+arc_a = NOTCH_W / 2   # horizontal semi-axis
+arc_b = NOTCH_H        # vertical semi-axis
+
+outline_x = np.concatenate([
+    [0, 0],
+    [notch_left],
+    notch_cx + arc_a * np.cos(arc_th),
+    [notch_right],
+    [PLATE_W, PLATE_W, 0],
+])
+outline_y = np.concatenate([
+    [PLATE_H, 0],
+    [0],
+    arc_b * np.sin(arc_th),
+    [0],
+    [0, PLATE_H, PLATE_H],
+])
 ax.plot(outline_x, outline_y, color=CUT_COLOR, linewidth=CUT_LW,
         solid_joinstyle='miter', zorder=10)
 
