@@ -18,8 +18,9 @@ PIVOT_Y       = 39.0               # below plate top (3.5 mm below bottom edge)
 ARC_RADIUS    = 31.0
 DEFLECTION    = 90.0               # degrees of needle sweep
 
-MOUNT_HOLE_DIA   = 2.0
-MOUNT_HOLE_INSET = 3.0             # from bottom-left / bottom-right corner
+MOUNT_HOLE_DIA   = 2.5
+MOUNT_HOLE_X     = 14.0            # center distance from left/right edges
+MOUNT_HOLE_Y     = 3.0             # center distance from bottom edge
 NOTCH_W          = 22.0            # width of semicircular cutout
 NOTCH_H          = 6.0             # height of cutout (arc peak from bottom edge)
 
@@ -184,10 +185,9 @@ outline_y = np.concatenate([
 ax.plot(outline_x, outline_y, color=CUT_COLOR, linewidth=CUT_LW,
         solid_joinstyle='miter', zorder=10)
 
-hole_y = MOUNT_HOLE_INSET
 hole_r = MOUNT_HOLE_DIA / 2
-for hx in [MOUNT_HOLE_INSET, PLATE_W - MOUNT_HOLE_INSET]:
-    circle = plt.Circle((hx, hole_y), hole_r,
+for hx in [MOUNT_HOLE_X, PLATE_W - MOUNT_HOLE_X]:
+    circle = plt.Circle((hx, MOUNT_HOLE_Y), hole_r,
                          fill=False, edgecolor=CUT_COLOR,
                          linewidth=CUT_LW, zorder=10)
     ax.add_patch(circle)
