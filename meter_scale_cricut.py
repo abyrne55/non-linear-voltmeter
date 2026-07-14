@@ -157,9 +157,25 @@ for v in major_volts:
                 fontsize=5, fontfamily='sans-serif', color='#0b0b0b', zorder=4)
 
 # ── "Vdc" label ─────────────────────────────────────────────────────
-ax.text(PLATE_W / 2, PLATE_H / 2, 'V', ha='center', va='center',
+ax.text(PLATE_W / 2, PLATE_H / 2 + 1.5, 'V', ha='center', va='center',
         fontsize=16, fontweight='bold', fontfamily='sans-serif',
         color='#0b0b0b', zorder=4)
+
+# DC symbol: solid line over dashed line, centered below V
+dc_cx = PLATE_W / 2
+dc_y = PLATE_H / 2 - 3.5
+dc_w = 5.0
+dc_lw = mm_to_pts(0.4)
+ax.plot([dc_cx - dc_w/2, dc_cx + dc_w/2], [dc_y + 0.8, dc_y + 0.8],
+        color='#0b0b0b', linewidth=dc_lw, solid_capstyle='butt', zorder=4)
+dash_len = 0.8
+gap_len = 0.6
+x = dc_cx - dc_w / 2
+while x + dash_len <= dc_cx + dc_w / 2 + 0.01:
+    x_end = min(x + dash_len, dc_cx + dc_w / 2)
+    ax.plot([x, x_end], [dc_y, dc_y],
+            color='#0b0b0b', linewidth=dc_lw, solid_capstyle='butt', zorder=4)
+    x += dash_len + gap_len
 
 # ── Cut outline (magenta) ───────────────────────────────────────────
 CUT_COLOR = '#ff00ff'
