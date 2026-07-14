@@ -290,5 +290,5 @@ def _fmt(v):
     return str(int(v)) if v == int(v) else f'{v:g}'
 
 png_path = f'/home/abyrne/tmp/meter/meter_scale_cricut_{_fmt(PLATE_W/10)}x{_fmt(PLATE_H/10)}cm.png'
-fig.savefig(png_path, format='png', dpi=400, transparent=True)
+fig.savefig(png_path, format='png', dpi=508, transparent=True)
 print(f'Saved {png_path}')
