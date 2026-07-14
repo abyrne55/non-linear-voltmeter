@@ -34,6 +34,7 @@ Color bands on the scale face indicate operating zones:
 | `meter.ino` | Arduino sketch — reads ADC, applies LUT, outputs PWM |
 | `genlut.py` | Generates the ADC→PWM lookup table (prints Arduino C array) |
 | `meter_scale.py` | Renders the non-linear scale face as a PNG (matplotlib) |
+| `meter_scale_cricut.py` | Generates a 1:1 SVG for Cricut "Print Then Cut" |
 | `meter_gui.py` | Interactive Tkinter simulator with needle, slider, and PWM readout |
 | `meter_lut.csv` | LUT as CSV (`voltage`, `duty_cycle_pct`) |
 | `voltage_mapping.csv` | Full mapping (`bus_voltage`, `meter_voltage`) |
@@ -48,6 +49,36 @@ Edit the parameters at the top of `genlut.py`:
 - `CENTER` — voltage the scale expands around (default 12.0)
 - `SIGMA` — width of the expanded region (default 1.4)
 - `BASE_GAIN` / `PEAK_GAIN` — sensitivity floor vs. peak at center
+
+## Custom Scale Face (Cricut)
+
+`meter_scale_cricut.py` generates a 1:1 physical-scale SVG for replacing the factory 0-5 V scale on the Baomain 85C1 with the custom non-linear 0-16 Vdc scale using a Cricut "Print Then Cut" workflow.
+
+```
+python3 meter_scale_cricut.py           # produces meter_scale_cricut.svg + .png
+python3 meter_scale_cricut.py --ruler   # adds mm ruler ticks for verifying dimensions
+```
+
+### Cricut workflow
+
+1. Import `meter_scale_cricut.svg` into Cricut Design Space
+2. Select all layers **except** the magenta cut outline → click **Flatten** (merges into a single "Print Then Cut" layer)
+3. The magenta cut outline remains as a **Cut** operation
+4. Select both the flattened print layer and cut outline → **Attach** (locks relative positioning)
+5. Click **Make It** — the Cricut prints the design with registration marks, then cuts the outline
+6. Trim and mount the printed scale face onto the meter
+
+### Tuning physical dimensions
+
+All measurements are configurable constants at the top of the script (mm). Print at 100% scale (no fit-to-page) and compare against the original plate. Key parameters:
+
+| Parameter | Default | What it controls |
+|-----------|---------|-----------------|
+| `PLATE_W` / `PLATE_H` | 60 × 35.5 | Overall plate size |
+| `ARC_RADIUS` | 31.0 | Scale arc radius |
+| `PIVOT_X` / `PIVOT_Y` | 30.0 / 39.0 | Needle pivot point |
+| `NOTCH_W` / `NOTCH_H` | 22.0 / 6.0 | Bottom cutout size |
+| `MOUNT_HOLE_*` | 2.5 dia, 14/3 inset | Screw hole placement |
 
 ## License
 
