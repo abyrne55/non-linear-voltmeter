@@ -1,7 +1,7 @@
 #define DEBUG
 
-const uint8_t PIN_ANALOG = A0;
-const uint8_t PIN_PWM    = 10;
+const uint8_t PIN_ANALOG = A1;
+const uint8_t PIN_PWM    = 5;
 const float   V_PER_COUNT = 16.0 / 1024.0;
 
 // Lookup table: ADC value (0-1023) -> PWM output (0-255).
