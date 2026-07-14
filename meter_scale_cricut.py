@@ -2,6 +2,7 @@
 """Generate a 1:1 physical-scale SVG of the non-linear voltmeter face
 for Cricut "Print Then Cut" on the Baomain 85C1 (0-5 V) panel meter."""
 
+import argparse
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
@@ -9,6 +10,11 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Arc, Wedge, Rectangle, Circle
 from matplotlib.collections import PatchCollection
 import matplotlib.patheffects as pe
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--ruler', action='store_true',
+                    help='Draw mm ruler ticks along the edges')
+args = parser.parse_args()
 
 # ── Physical dimensions (mm) ─────────────────────────────────────────
 PLATE_W       = 60.0
@@ -163,22 +169,24 @@ notch_cx = PLATE_W / 2
 notch_left = notch_cx - NOTCH_W / 2
 notch_right = notch_cx + NOTCH_W / 2
 
-# Elliptical arc: half-width = NOTCH_W/2, height = NOTCH_H
-arc_th = np.linspace(np.pi, 0, 80)
-arc_a = NOTCH_W / 2   # horizontal semi-axis
-arc_b = NOTCH_H        # vertical semi-axis
+# Circular arc: chord = NOTCH_W, sagitta = NOTCH_H
+arc_half_chord = NOTCH_W / 2
+arc_r = (arc_half_chord**2 + NOTCH_H**2) / (2 * NOTCH_H)
+arc_cy = -(arc_r - NOTCH_H)
+arc_angle = np.arcsin(arc_half_chord / arc_r)
+arc_th = np.linspace(np.pi - arc_angle, arc_angle, 80)
 
 outline_x = np.concatenate([
     [0, 0],
     [notch_left],
-    notch_cx + arc_a * np.cos(arc_th),
+    notch_cx + arc_r * np.cos(arc_th),
     [notch_right],
     [PLATE_W, PLATE_W, 0],
 ])
 outline_y = np.concatenate([
     [PLATE_H, 0],
     [0],
-    arc_b * np.sin(arc_th),
+    arc_cy + arc_r * np.sin(arc_th),
     [0],
     [0, PLATE_H, PLATE_H],
 ])
@@ -191,6 +199,34 @@ for hx in [MOUNT_HOLE_X, PLATE_W - MOUNT_HOLE_X]:
                          fill=False, edgecolor=CUT_COLOR,
                          linewidth=CUT_LW, zorder=10)
     ax.add_patch(circle)
+
+# ── Ruler (optional) ────────────────────────────────────────────────
+if args.ruler:
+    RULER_COLOR = '#888888'
+    RULER_TICK = 1.5
+    RULER_LW = mm_to_pts(0.1)
+    for x in range(int(PLATE_W) + 1):
+        tick = RULER_TICK * (2 if x % 10 == 0 else 1.4 if x % 5 == 0 else 1)
+        ax.plot([x, x], [PLATE_H, PLATE_H - tick],
+                color=RULER_COLOR, linewidth=RULER_LW, zorder=5)
+        ax.plot([x, x], [0, tick],
+                color=RULER_COLOR, linewidth=RULER_LW, zorder=5)
+        if x % 10 == 0:
+            ax.text(x, PLATE_H - tick - 0.6, str(x), ha='center', va='top',
+                    fontsize=3, color=RULER_COLOR, fontfamily='sans-serif', zorder=5)
+            ax.text(x, tick + 0.6, str(x), ha='center', va='bottom',
+                    fontsize=3, color=RULER_COLOR, fontfamily='sans-serif', zorder=5)
+    for y in range(int(PLATE_H) + 1):
+        tick = RULER_TICK * (2 if y % 10 == 0 else 1.4 if y % 5 == 0 else 1)
+        ax.plot([0, tick], [y, y],
+                color=RULER_COLOR, linewidth=RULER_LW, zorder=5)
+        ax.plot([PLATE_W, PLATE_W - tick], [y, y],
+                color=RULER_COLOR, linewidth=RULER_LW, zorder=5)
+        if y % 10 == 0:
+            ax.text(tick + 0.6, y, str(y), ha='left', va='center',
+                    fontsize=3, color=RULER_COLOR, fontfamily='sans-serif', zorder=5)
+            ax.text(PLATE_W - tick - 0.6, y, str(y), ha='right', va='center',
+                    fontsize=3, color=RULER_COLOR, fontfamily='sans-serif', zorder=5)
 
 # ── Save ─────────────────────────────────────────────────────────────
 svg_path = '/home/abyrne/tmp/meter/meter_scale_cricut.svg'
