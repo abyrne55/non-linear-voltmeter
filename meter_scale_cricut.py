@@ -59,14 +59,14 @@ RANGES = [
     (13.2, 16.0, '#cc3333'),
 ]
 
-BAND_OFFSET = ARC_RADIUS * 0.04
-BAND_WIDTH_MM = 2.0
-
 # ── Tick geometry ────────────────────────────────────────────────────
 MAJOR_TICK_LEN = ARC_RADIUS * 0.12
 HALF_TICK_LEN  = ARC_RADIUS * 0.07
 MINOR_TICK_LEN = ARC_RADIUS * 0.04
 LABEL_OFFSET   = ARC_RADIUS * 0.20
+
+BAND_INNER = ARC_RADIUS
+BAND_OUTER = ARC_RADIUS + MAJOR_TICK_LEN + 0.1275
 
 # ── Matplotlib setup ────────────────────────────────────────────────
 MM_PER_INCH = 25.4
@@ -93,15 +93,17 @@ ax.add_patch(Rectangle((0, 0), PLATE_W, PLATE_H,
 def mm_to_pts(mm):
     return mm * (72.0 / MM_PER_INCH)
 
-# ── Color band arcs ─────────────────────────────────────────────────
-r_band = ARC_RADIUS + BAND_OFFSET
+# ── Color band fills (tach-style: fills the tick region) ────────────
 for v_lo, v_hi, color in RANGES:
     p0 = volt_to_position(v_lo)
     p1 = volt_to_position(v_hi)
     th = np.linspace(pos_to_angle_rad(p0), pos_to_angle_rad(p1), 300)
-    ax.plot(PIVOT_X + r_band * np.cos(th), cy + r_band * np.sin(th),
-            color=color, linewidth=mm_to_pts(BAND_WIDTH_MM),
-            solid_capstyle='butt', zorder=1)
+    # Build closed annular wedge: outer arc forward, inner arc back
+    xs = np.concatenate([PIVOT_X + BAND_OUTER * np.cos(th),
+                         PIVOT_X + BAND_INNER * np.cos(th[::-1])])
+    ys = np.concatenate([cy + BAND_OUTER * np.sin(th),
+                         cy + BAND_INNER * np.sin(th[::-1])])
+    ax.fill(xs, ys, facecolor=color, edgecolor='none', zorder=1)
 
 # ── Main arc ────────────────────────────────────────────────────────
 theta = np.linspace(np.radians(arc_end_deg), np.radians(arc_start_deg), 500)
@@ -117,32 +119,32 @@ for v in minor_volts:
         continue
     pos = volt_to_position(v)
     ang = pos_to_angle_rad(pos)
-    r_inner = ARC_RADIUS - MINOR_TICK_LEN
-    ax.plot([PIVOT_X + r_inner * np.cos(ang), PIVOT_X + ARC_RADIUS * np.cos(ang)],
-            [cy + r_inner * np.sin(ang), cy + ARC_RADIUS * np.sin(ang)],
-            color='#52514e', linewidth=mm_to_pts(0.15), zorder=3)
+    r_outer = ARC_RADIUS + MINOR_TICK_LEN
+    ax.plot([PIVOT_X + ARC_RADIUS * np.cos(ang), PIVOT_X + r_outer * np.cos(ang)],
+            [cy + ARC_RADIUS * np.sin(ang), cy + r_outer * np.sin(ang)],
+            color='#0b0b0b', linewidth=mm_to_pts(0.15), zorder=3)
 
 half_volts = np.arange(0.5, 16, 1)
 for v in half_volts:
     pos = volt_to_position(v)
     ang = pos_to_angle_rad(pos)
-    r_inner = ARC_RADIUS - HALF_TICK_LEN
-    ax.plot([PIVOT_X + r_inner * np.cos(ang), PIVOT_X + ARC_RADIUS * np.cos(ang)],
-            [cy + r_inner * np.sin(ang), cy + ARC_RADIUS * np.sin(ang)],
-            color='#52514e', linewidth=mm_to_pts(0.20), zorder=3)
+    r_outer = ARC_RADIUS + HALF_TICK_LEN
+    ax.plot([PIVOT_X + ARC_RADIUS * np.cos(ang), PIVOT_X + r_outer * np.cos(ang)],
+            [cy + ARC_RADIUS * np.sin(ang), cy + r_outer * np.sin(ang)],
+            color='#0b0b0b', linewidth=mm_to_pts(0.20), zorder=3)
 
 LABELED_VOLTS = {0, 5, 10, 11, 12, 13, 14, 16}
 
 for v in major_volts:
     pos = volt_to_position(v)
     ang = pos_to_angle_rad(pos)
-    r_inner = ARC_RADIUS - MAJOR_TICK_LEN
-    ax.plot([PIVOT_X + r_inner * np.cos(ang), PIVOT_X + ARC_RADIUS * np.cos(ang)],
-            [cy + r_inner * np.sin(ang), cy + ARC_RADIUS * np.sin(ang)],
-            color='#0b0b0b', linewidth=mm_to_pts(0.35), zorder=3)
+    r_outer = ARC_RADIUS + MAJOR_TICK_LEN
+    ax.plot([PIVOT_X + ARC_RADIUS * np.cos(ang), PIVOT_X + r_outer * np.cos(ang)],
+            [cy + ARC_RADIUS * np.sin(ang), cy + r_outer * np.sin(ang)],
+            color='#0b0b0b', linewidth=mm_to_pts(0.25), zorder=3)
 
     if v in LABELED_VOLTS:
-        r_label = ARC_RADIUS - LABEL_OFFSET
+        r_label = ARC_RADIUS + LABEL_OFFSET
         ax.text(PIVOT_X + r_label * np.cos(ang), cy + r_label * np.sin(ang),
                 f'{int(v)}', ha='center', va='center',
                 fontsize=5, fontfamily='sans-serif', color='#0b0b0b', zorder=4)
