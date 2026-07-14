@@ -70,7 +70,7 @@ RANGES = [
 MAJOR_TICK_LEN = ARC_RADIUS * 0.12
 HALF_TICK_LEN  = ARC_RADIUS * 0.07
 MINOR_TICK_LEN = ARC_RADIUS * 0.04
-LABEL_OFFSET   = ARC_RADIUS * 0.20
+LABEL_OFFSET   = ARC_RADIUS * 0.18
 
 BAND_INNER = ARC_RADIUS
 BAND_OUTER = ARC_RADIUS + MAJOR_TICK_LEN + 0.1275
@@ -154,11 +154,11 @@ for v in major_volts:
         r_label = ARC_RADIUS + LABEL_OFFSET
         ax.text(PIVOT_X + r_label * np.cos(ang), cy + r_label * np.sin(ang),
                 f'{int(v)}', ha='center', va='center',
-                fontsize=5, fontfamily='sans-serif', color='#0b0b0b', zorder=4)
+                fontsize=6.5, fontfamily='Montserrat', color='#0b0b0b', zorder=4)
 
 # ── "Vdc" label ─────────────────────────────────────────────────────
 ax.text(PLATE_W / 2, PLATE_H / 2 + 1.5, 'V', ha='center', va='center',
-        fontsize=16, fontweight='bold', fontfamily='sans-serif',
+        fontsize=16, fontweight='bold', fontfamily='Montserrat',
         color='#0b0b0b', zorder=4)
 
 # DC symbol: solid line over dashed line, centered below V
