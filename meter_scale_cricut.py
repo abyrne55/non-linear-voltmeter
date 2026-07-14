@@ -7,7 +7,8 @@ import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from matplotlib.patches import Arc, Wedge, Rectangle, Circle
+from matplotlib.path import Path
+from matplotlib.patches import Arc, Wedge, Rectangle, Circle, PathPatch
 from matplotlib.collections import PatchCollection
 import matplotlib.patheffects as pe
 
@@ -93,8 +94,9 @@ ax.axis('off')
 cy = PLATE_H - PIVOT_Y  # pivot in axes coords (y=0 is bottom)
 
 # ── White background ────────────────────────────────────────────────
-ax.add_patch(Rectangle((0, 0), PLATE_W, PLATE_H,
-                        facecolor='white', edgecolor='none', zorder=0))
+bg_rect = Rectangle((0, 0), PLATE_W, PLATE_H,
+                     facecolor='white', edgecolor='none', zorder=0)
+ax.add_patch(bg_rect)
 
 # ── Helper: mm linewidth ────────────────────────────────────────────
 def mm_to_pts(mm):
@@ -206,15 +208,17 @@ outline_y = np.concatenate([
     [0],
     [0, PLATE_H, PLATE_H],
 ])
-ax.plot(outline_x, outline_y, color=CUT_COLOR, linewidth=CUT_LW,
-        solid_joinstyle='miter', zorder=10)
+(cut_line,) = ax.plot(outline_x, outline_y, color=CUT_COLOR, linewidth=CUT_LW,
+                      solid_joinstyle='miter', zorder=10)
 
 hole_r = MOUNT_HOLE_DIA / 2
+cut_circles = []
 for hx in [MOUNT_HOLE_X, PLATE_W - MOUNT_HOLE_X]:
     circle = plt.Circle((hx, MOUNT_HOLE_Y), hole_r,
                          fill=False, edgecolor=CUT_COLOR,
                          linewidth=CUT_LW, zorder=10)
     ax.add_patch(circle)
+    cut_circles.append(circle)
 
 # ── Ruler (optional) ────────────────────────────────────────────────
 if args.ruler:
@@ -258,9 +262,32 @@ if args.ruler:
 
 # ── Save ─────────────────────────────────────────────────────────────
 svg_path = '/home/abyrne/tmp/meter/meter_scale_cricut.svg'
-png_path = '/home/abyrne/tmp/meter/meter_scale_cricut.png'
-
 fig.savefig(svg_path, format='svg', transparent=False)
-fig.savefig(png_path, format='png', dpi=300, transparent=False)
 print(f'Saved {svg_path}')
+
+# ── PNG: transparent notch & holes, no cut marks ─────────────────────
+cut_line.remove()
+for c in cut_circles:
+    c.remove()
+bg_rect.remove()
+
+def _circle_hole(cx, cy, r, n=64):
+    th = np.linspace(2 * np.pi, 0, n, endpoint=False)
+    verts = [(cx + r * np.cos(t), cy + r * np.sin(t)) for t in th]
+    verts.append(verts[0])
+    codes = [Path.MOVETO] + [Path.LINETO] * (n - 1) + [Path.CLOSEPOLY]
+    return verts, codes
+
+plate_verts = list(zip(outline_x, outline_y))
+plate_codes = ([Path.MOVETO] + [Path.LINETO] * (len(plate_verts) - 2)
+               + [Path.CLOSEPOLY])
+h1v, h1c = _circle_hole(MOUNT_HOLE_X, MOUNT_HOLE_Y, hole_r)
+h2v, h2c = _circle_hole(PLATE_W - MOUNT_HOLE_X, MOUNT_HOLE_Y, hole_r)
+compound = Path(plate_verts + h1v + h2v, plate_codes + h1c + h2c)
+ax.add_patch(PathPatch(compound, facecolor='white', edgecolor='none', zorder=0))
+
+w_mm = int(round(PLATE_W))
+h_mm = int(round(PLATE_H))
+png_path = f'/home/abyrne/tmp/meter/meter_scale_cricut_{w_mm}x{h_mm}mm.png'
+fig.savefig(png_path, format='png', dpi=300, transparent=True)
 print(f'Saved {png_path}')
