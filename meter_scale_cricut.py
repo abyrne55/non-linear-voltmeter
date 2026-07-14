@@ -286,8 +286,9 @@ h2v, h2c = _circle_hole(PLATE_W - MOUNT_HOLE_X, MOUNT_HOLE_Y, hole_r)
 compound = Path(plate_verts + h1v + h2v, plate_codes + h1c + h2c)
 ax.add_patch(PathPatch(compound, facecolor='white', edgecolor='none', zorder=0))
 
-w_mm = int(round(PLATE_W))
-h_mm = int(round(PLATE_H))
-png_path = f'/home/abyrne/tmp/meter/meter_scale_cricut_{w_mm}x{h_mm}mm.png'
-fig.savefig(png_path, format='png', dpi=300, transparent=True)
+def _fmt(v):
+    return str(int(v)) if v == int(v) else f'{v:g}'
+
+png_path = f'/home/abyrne/tmp/meter/meter_scale_cricut_{_fmt(PLATE_W/10)}x{_fmt(PLATE_H/10)}cm.png'
+fig.savefig(png_path, format='png', dpi=400, transparent=True)
 print(f'Saved {png_path}')
