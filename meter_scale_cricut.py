@@ -32,6 +32,7 @@ NOTCH_W          = 22.0            # width of cutout
 NOTCH_H          = 6.0             # height of cutout (peak from bottom edge)
 TOWER_W          = 1.0
 VALLEY_DEPTH     = 2.0
+DOME_N           = 2.283
 FILLET_R         = 0.3
 
 # ── Voltage / sensitivity (same as meter_scale.py) ───────────────────
@@ -211,16 +212,57 @@ lt_cap_th = np.linspace(np.pi, 0, 30)
 lt_cap_x = (lt_outer + lt_inner) / 2 + tower_r * np.cos(lt_cap_th)
 lt_cap_y = tower_cap_cy + tower_r * np.sin(lt_cap_th)
 
-# Dome semi-ellipse, trimmed to meet fillets at y = VALLEY_DEPTH + FILLET_R
+# Dome superellipse profile matching physical meter: y = b*(1-|t|^n)
 dome_left = notch_left + TOWER_W + 2.0   # x=22
 dome_right = notch_right - TOWER_W - 2.0  # x=38
 dome_cx = notch_cx
-dome_a = (dome_right - dome_left) / 2     # 8mm semi-major
-dome_b = NOTCH_H - VALLEY_DEPTH           # 4mm semi-minor
-dome_trim = np.arcsin(FILLET_R / dome_b)
-dome_th = np.linspace(np.pi - dome_trim, dome_trim, 60)
-dome_x = dome_cx + dome_a * np.cos(dome_th)
-dome_y = VALLEY_DEPTH + dome_b * np.sin(dome_th)
+dome_a = (dome_right - dome_left) / 2     # 8mm half-width
+dome_b = NOTCH_H - VALLEY_DEPTH           # 4mm peak height
+
+def _dome_y(t):
+    return VALLEY_DEPTH + dome_b * (1 - np.abs(t) ** DOME_N)
+
+def _dome_slope(t):
+    """dy/dx of dome at parameter t."""
+    if abs(t) < 1e-12:
+        return 0.0
+    return -dome_b * DOME_N * np.abs(t) ** (DOME_N - 1) * np.sign(t) / dome_a
+
+def _dome_valley_fillet(side, r, n_pts=15):
+    """Circular arc tangent to valley floor and dome curve.
+    side: -1 for left junction, +1 for right junction.
+    Returns (arc_x, arc_y, t_tangent) where t_tangent is the dome
+    trim point."""
+    from scipy.optimize import brentq
+    def residual(t_abs):
+        t = side * t_abs
+        s = _dome_slope(t)
+        norm = np.sqrt(1 + s * s)
+        y_t = _dome_y(t)
+        cy_circ = y_t + r / norm
+        return cy_circ - (VALLEY_DEPTH + r)
+    t_sol = brentq(residual, 0.01, 0.999)
+    t_tang = side * t_sol
+    x_tang = dome_cx + dome_a * t_tang
+    y_tang = _dome_y(t_tang)
+    s = _dome_slope(t_tang)
+    norm = np.sqrt(1 + s * s)
+    cx_circ = x_tang + r * (-s) / norm
+    cy_circ = VALLEY_DEPTH + r
+    ang_flat = -np.pi / 2
+    ang_dome = np.arctan2(y_tang - cy_circ, x_tang - cx_circ)
+    if side < 0:
+        th = np.linspace(ang_flat, ang_dome, n_pts)
+    else:
+        th = np.linspace(ang_dome, ang_flat, n_pts)
+    return cx_circ + r * np.cos(th), cy_circ + r * np.sin(th), t_tang
+
+fc_x, fc_y, t_trim_left = _dome_valley_fillet(-1, FILLET_R)
+fd_x, fd_y, t_trim_right = _dome_valley_fillet(+1, FILLET_R)
+
+dome_t = np.linspace(t_trim_left, t_trim_right, 60)
+dome_x = dome_cx + dome_a * dome_t
+dome_y = _dome_y(dome_t)
 
 # Right tower (x=40..41): inner wall at x=40, outer wall at x=41
 rt_inner = notch_right - TOWER_W
@@ -232,8 +274,6 @@ rt_cap_y = tower_cap_cy + tower_r * np.sin(rt_cap_th)
 # Fillet arcs at each 90° corner
 fa_x, fa_y = _fillet_ru(notch_left, 0, FILLET_R)
 fb_x, fb_y = _fillet_dr(lt_inner, VALLEY_DEPTH, FILLET_R)
-fc_x, fc_y = _fillet_ru(dome_left, VALLEY_DEPTH, FILLET_R)
-fd_x, fd_y = _fillet_dr(dome_right, VALLEY_DEPTH, FILLET_R)
 fe_x, fe_y = _fillet_ru(rt_inner, VALLEY_DEPTH, FILLET_R)
 ff_x, ff_y = _fillet_dr(rt_outer, 0, FILLET_R)
 
