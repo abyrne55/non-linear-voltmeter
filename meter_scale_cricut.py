@@ -19,18 +19,18 @@ args = parser.parse_args()
 
 # ── Physical dimensions (mm) ─────────────────────────────────────────
 PLATE_W       = 60.0
-PLATE_H       = 35.5
+PLATE_H       = 35.7
 PIVOT_X       = PLATE_W / 2        # 30.0
-PIVOT_Y       = 39.0               # below plate top (3.5 mm below bottom edge)
-ARC_RADIUS    = 31.0
+PIVOT_Y       = 39.2               # below plate top (3.5 mm below bottom edge)
+ARC_RADIUS    = 31.5
 DEFLECTION    = 90.0               # degrees of needle sweep
 
 MOUNT_HOLE_DIA   = 2.5
 MOUNT_HOLE_X     = 14.0            # center distance from left/right edges
 MOUNT_HOLE_Y     = 3.0             # center distance from bottom edge
-NOTCH_W          = 22.0            # width of cutout
-NOTCH_H          = 6.0             # height of cutout (peak from bottom edge)
-TOWER_W          = 1.0
+NOTCH_W          = 22.7            # width of cutout
+NOTCH_H          = 5.85            # height of cutout (peak from bottom edge)
+TOWER_W          = 1.2
 VALLEY_DEPTH     = 2.0
 DOME_N           = 2.283
 FILLET_R         = 0.3
@@ -213,8 +213,8 @@ lt_cap_x = (lt_outer + lt_inner) / 2 + tower_r * np.cos(lt_cap_th)
 lt_cap_y = tower_cap_cy + tower_r * np.sin(lt_cap_th)
 
 # Dome superellipse profile matching physical meter: y = b*(1-|t|^n)
-dome_left = notch_left + TOWER_W + 2.0   # x=22
-dome_right = notch_right - TOWER_W - 2.0  # x=38
+dome_left = notch_left + TOWER_W + 1.8   # x=22
+dome_right = notch_right - TOWER_W - 1.8  # x=38
 dome_cx = notch_cx
 dome_a = (dome_right - dome_left) / 2     # 8mm half-width
 dome_b = NOTCH_H - VALLEY_DEPTH           # 4mm peak height
