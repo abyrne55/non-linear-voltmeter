@@ -32,6 +32,7 @@ NOTCH_W          = 22.0            # width of cutout
 NOTCH_H          = 6.0             # height of cutout (peak from bottom edge)
 TOWER_W          = 1.0
 VALLEY_DEPTH     = 2.0
+FILLET_R         = 0.5
 
 # ── Voltage / sensitivity (same as meter_scale.py) ───────────────────
 BUS_MIN, BUS_MAX = 0.0, 16.0
@@ -189,9 +190,19 @@ notch_cx = PLATE_W / 2
 notch_left = notch_cx - NOTCH_W / 2
 notch_right = notch_cx + NOTCH_W / 2
 
-# Notch profile: two towers flanking a dome
+# Notch profile: two towers flanking a dome, with filleted corners
 tower_r = TOWER_W / 2
 tower_cap_cy = NOTCH_H - tower_r  # y=5.5
+
+def _fillet_ru(cx, cy, r, n=10):
+    """Right-to-up corner fillet."""
+    th = np.linspace(-np.pi/2, 0, n)
+    return (cx - r) + r * np.cos(th), (cy + r) + r * np.sin(th)
+
+def _fillet_dr(cx, cy, r, n=10):
+    """Down-to-right corner fillet."""
+    th = np.linspace(np.pi, 3*np.pi/2, n)
+    return (cx + r) + r * np.cos(th), (cy + r) + r * np.sin(th)
 
 # Left tower (x=19..20): outer wall at x=19, inner wall at x=20
 lt_outer = notch_left
@@ -200,13 +211,14 @@ lt_cap_th = np.linspace(np.pi, 0, 30)
 lt_cap_x = (lt_outer + lt_inner) / 2 + tower_r * np.cos(lt_cap_th)
 lt_cap_y = tower_cap_cy + tower_r * np.sin(lt_cap_th)
 
-# Dome semi-ellipse (x=22..38, y=2..6)
+# Dome semi-ellipse, trimmed to meet fillets at y = VALLEY_DEPTH + FILLET_R
 dome_left = notch_left + TOWER_W + 2.0   # x=22
 dome_right = notch_right - TOWER_W - 2.0  # x=38
 dome_cx = notch_cx
 dome_a = (dome_right - dome_left) / 2     # 8mm semi-major
 dome_b = NOTCH_H - VALLEY_DEPTH           # 4mm semi-minor
-dome_th = np.linspace(np.pi, 0, 60)
+dome_trim = np.arcsin(FILLET_R / dome_b)
+dome_th = np.linspace(np.pi - dome_trim, dome_trim, 60)
 dome_x = dome_cx + dome_a * np.cos(dome_th)
 dome_y = VALLEY_DEPTH + dome_b * np.sin(dome_th)
 
@@ -217,24 +229,40 @@ rt_cap_th = np.linspace(np.pi, 0, 30)
 rt_cap_x = (rt_inner + rt_outer) / 2 + tower_r * np.cos(rt_cap_th)
 rt_cap_y = tower_cap_cy + tower_r * np.sin(rt_cap_th)
 
+# Fillet arcs at each 90° corner
+fa_x, fa_y = _fillet_ru(notch_left, 0, FILLET_R)
+fb_x, fb_y = _fillet_dr(lt_inner, VALLEY_DEPTH, FILLET_R)
+fc_x, fc_y = _fillet_ru(dome_left, VALLEY_DEPTH, FILLET_R)
+fd_x, fd_y = _fillet_dr(dome_right, VALLEY_DEPTH, FILLET_R)
+fe_x, fe_y = _fillet_ru(rt_inner, VALLEY_DEPTH, FILLET_R)
+ff_x, ff_y = _fillet_dr(rt_outer, 0, FILLET_R)
+
 # Assemble notch profile left-to-right along bottom edge
 notch_x = np.concatenate([
-    [notch_left, notch_left],          # outer wall up from y=0
-    lt_cap_x,                          # semicircular cap
-    [lt_inner, lt_inner],              # inner wall down to valley
-    dome_x,                            # dome
-    [rt_inner, rt_inner],              # inner wall up from valley
-    rt_cap_x,                          # semicircular cap
-    [rt_outer, rt_outer],              # outer wall down to y=0
+    fa_x,
+    [notch_left, notch_left],
+    lt_cap_x,
+    [lt_inner, lt_inner],
+    fb_x, fc_x,
+    dome_x,
+    fd_x, fe_x,
+    [rt_inner, rt_inner],
+    rt_cap_x,
+    [rt_outer, rt_outer],
+    ff_x,
 ])
 notch_y = np.concatenate([
-    [0, tower_cap_cy],
+    fa_y,
+    [FILLET_R, tower_cap_cy],
     lt_cap_y,
-    [tower_cap_cy, VALLEY_DEPTH],
+    [tower_cap_cy, VALLEY_DEPTH + FILLET_R],
+    fb_y, fc_y,
     dome_y,
-    [VALLEY_DEPTH, tower_cap_cy],
+    fd_y, fe_y,
+    [VALLEY_DEPTH + FILLET_R, tower_cap_cy],
     rt_cap_y,
-    [tower_cap_cy, 0],
+    [tower_cap_cy, FILLET_R],
+    ff_y,
 ])
 
 outline_x = np.concatenate([
