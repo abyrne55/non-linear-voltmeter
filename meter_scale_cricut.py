@@ -32,7 +32,7 @@ NOTCH_W          = 22.0            # width of cutout
 NOTCH_H          = 6.0             # height of cutout (peak from bottom edge)
 TOWER_W          = 1.0
 VALLEY_DEPTH     = 2.0
-FILLET_R         = 0.5
+FILLET_R         = 0.3
 
 # ── Voltage / sensitivity (same as meter_scale.py) ───────────────────
 BUS_MIN, BUS_MAX = 0.0, 16.0
