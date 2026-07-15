@@ -28,8 +28,10 @@ DEFLECTION    = 90.0               # degrees of needle sweep
 MOUNT_HOLE_DIA   = 2.5
 MOUNT_HOLE_X     = 14.0            # center distance from left/right edges
 MOUNT_HOLE_Y     = 3.0             # center distance from bottom edge
-NOTCH_W          = 22.0            # width of semicircular cutout
-NOTCH_H          = 6.0             # height of cutout (arc peak from bottom edge)
+NOTCH_W          = 22.0            # width of cutout
+NOTCH_H          = 6.0             # height of cutout (peak from bottom edge)
+TOWER_W          = 1.0
+VALLEY_DEPTH     = 2.0
 
 # ── Voltage / sensitivity (same as meter_scale.py) ───────────────────
 BUS_MIN, BUS_MAX = 0.0, 16.0
@@ -187,25 +189,62 @@ notch_cx = PLATE_W / 2
 notch_left = notch_cx - NOTCH_W / 2
 notch_right = notch_cx + NOTCH_W / 2
 
-# Circular arc: chord = NOTCH_W, sagitta = NOTCH_H
-arc_half_chord = NOTCH_W / 2
-arc_r = (arc_half_chord**2 + NOTCH_H**2) / (2 * NOTCH_H)
-arc_cy = -(arc_r - NOTCH_H)
-arc_angle = np.arcsin(arc_half_chord / arc_r)
-arc_th = np.linspace(np.pi - arc_angle, arc_angle, 80)
+# Notch profile: two towers flanking a dome
+tower_r = TOWER_W / 2
+tower_cap_cy = NOTCH_H - tower_r  # y=5.5
+
+# Left tower (x=19..20): outer wall at x=19, inner wall at x=20
+lt_outer = notch_left
+lt_inner = notch_left + TOWER_W
+lt_cap_th = np.linspace(np.pi, 0, 30)
+lt_cap_x = (lt_outer + lt_inner) / 2 + tower_r * np.cos(lt_cap_th)
+lt_cap_y = tower_cap_cy + tower_r * np.sin(lt_cap_th)
+
+# Dome semi-ellipse (x=22..38, y=2..6)
+dome_left = notch_left + TOWER_W + 2.0   # x=22
+dome_right = notch_right - TOWER_W - 2.0  # x=38
+dome_cx = notch_cx
+dome_a = (dome_right - dome_left) / 2     # 8mm semi-major
+dome_b = NOTCH_H - VALLEY_DEPTH           # 4mm semi-minor
+dome_th = np.linspace(np.pi, 0, 60)
+dome_x = dome_cx + dome_a * np.cos(dome_th)
+dome_y = VALLEY_DEPTH + dome_b * np.sin(dome_th)
+
+# Right tower (x=40..41): inner wall at x=40, outer wall at x=41
+rt_inner = notch_right - TOWER_W
+rt_outer = notch_right
+rt_cap_th = np.linspace(np.pi, 0, 30)
+rt_cap_x = (rt_inner + rt_outer) / 2 + tower_r * np.cos(rt_cap_th)
+rt_cap_y = tower_cap_cy + tower_r * np.sin(rt_cap_th)
+
+# Assemble notch profile left-to-right along bottom edge
+notch_x = np.concatenate([
+    [notch_left, notch_left],          # outer wall up from y=0
+    lt_cap_x,                          # semicircular cap
+    [lt_inner, lt_inner],              # inner wall down to valley
+    dome_x,                            # dome
+    [rt_inner, rt_inner],              # inner wall up from valley
+    rt_cap_x,                          # semicircular cap
+    [rt_outer, rt_outer],              # outer wall down to y=0
+])
+notch_y = np.concatenate([
+    [0, tower_cap_cy],
+    lt_cap_y,
+    [tower_cap_cy, VALLEY_DEPTH],
+    dome_y,
+    [VALLEY_DEPTH, tower_cap_cy],
+    rt_cap_y,
+    [tower_cap_cy, 0],
+])
 
 outline_x = np.concatenate([
     [0, 0],
-    [notch_left],
-    notch_cx + arc_r * np.cos(arc_th),
-    [notch_right],
+    notch_x,
     [PLATE_W, PLATE_W, 0],
 ])
 outline_y = np.concatenate([
     [PLATE_H, 0],
-    [0],
-    arc_cy + arc_r * np.sin(arc_th),
-    [0],
+    notch_y,
     [0, PLATE_H, PLATE_H],
 ])
 (cut_line,) = ax.plot(outline_x, outline_y, color=CUT_COLOR, linewidth=CUT_LW,
