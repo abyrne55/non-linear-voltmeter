@@ -21,8 +21,8 @@ position /= position[-1]
 def volt_to_position(v):
     return np.interp(v, voltage, position)
 
-arc_start_deg = 145
-arc_end_deg = 35
+arc_start_deg = 135
+arc_end_deg = 45
 arc_span = arc_start_deg - arc_end_deg
 
 radius = 1.0
