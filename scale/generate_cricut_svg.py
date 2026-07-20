@@ -80,6 +80,8 @@ LABEL_OFFSET   = ARC_RADIUS * 0.18
 
 BAND_INNER = ARC_RADIUS
 BAND_OUTER = ARC_RADIUS + MAJOR_TICK_LEN + 0.1275
+MAJOR_TICK_LW = 0.25
+_ARC_END_EXT = (MAJOR_TICK_LW / 2) / ARC_RADIUS
 
 # ── Matplotlib setup ────────────────────────────────────────────────
 MM_PER_INCH = 25.4
@@ -111,8 +113,13 @@ def mm_to_pts(mm):
 for v_lo, v_hi, color in RANGES:
     p0 = volt_to_position(v_lo)
     p1 = volt_to_position(v_hi)
-    th = np.linspace(pos_to_angle_rad(p0), pos_to_angle_rad(p1), 300)
-    # Build closed annular wedge: outer arc forward, inner arc back
+    a0 = pos_to_angle_rad(p0)
+    a1 = pos_to_angle_rad(p1)
+    if v_lo == BUS_MIN:
+        a0 += _ARC_END_EXT
+    if v_hi == BUS_MAX:
+        a1 -= _ARC_END_EXT
+    th = np.linspace(a0, a1, 300)
     xs = np.concatenate([PIVOT_X + BAND_OUTER * np.cos(th),
                          PIVOT_X + BAND_INNER * np.cos(th[::-1])])
     ys = np.concatenate([cy + BAND_OUTER * np.sin(th),
@@ -120,9 +127,11 @@ for v_lo, v_hi, color in RANGES:
     ax.fill(xs, ys, facecolor=color, edgecolor='none', zorder=1)
 
 # ── Main arc ────────────────────────────────────────────────────────
-theta = np.linspace(np.radians(arc_end_deg), np.radians(arc_start_deg), 500)
+theta = np.linspace(np.radians(arc_end_deg) - _ARC_END_EXT,
+                    np.radians(arc_start_deg) + _ARC_END_EXT, 500)
 ax.plot(PIVOT_X + ARC_RADIUS * np.cos(theta), cy + ARC_RADIUS * np.sin(theta),
-        color='#0b0b0b', linewidth=mm_to_pts(0.35), zorder=2)
+        color='#0b0b0b', linewidth=mm_to_pts(0.35), solid_capstyle='butt',
+        zorder=2)
 
 # ── Ticks and labels ────────────────────────────────────────────────
 major_volts = np.arange(0, 17, 1)
